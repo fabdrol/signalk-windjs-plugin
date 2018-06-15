@@ -12,7 +12,9 @@ const pkg = require('./package.json')
 const debug = require('debug')(`${pkg.name}:${pkg.version}`)
 const moment = require('moment')
 const request = require('request')
+const express = require('express')
 const fs = require('fs')
+const join = require('path').join
 const Q = require('q')
 
 /* CONSTANTS */
@@ -26,18 +28,13 @@ module.exports = function windJSPlugin (app, options) {
     version: pkg.version,
     name: `WindJS GRIB2 server, version ${pkg.version}`,
     description: 'This plugin scrapes NOAA GRIB2 and makes them available in JSON format.',
-    schema: {}
+    schema: {
+      type: 'oject',
+      title: `WindJS GRIB2 server, version ${pkg.version}`
+    }
   }
 
   const handlers = {
-    index (req, res) {
-      res.send(plugin.name)
-    },
-
-    alive (req, res) {
-      res.send(`${Date.now()} ${plugin.name}`)
-    },
-
     latest (req, res) {
       /**
        * Find and return the latest available 6 hourly pre-parsed JSON data
@@ -102,10 +99,9 @@ module.exports = function windJSPlugin (app, options) {
   }
 
   plugin.registerWithRouter = function registerWindJSPluginRoutes (router) {
-    router.get('/wind', handlers.index)
-    router.get('/wind/alive', handlers.alive)
-    router.get('/wind/latest', handlers.latest)
-    router.get('/wind/nearest', handlers.nearest)
+    router.get('/latest', handlers.latest)
+    router.get('/nearest', handlers.nearest)
+    router.use('/ui', express.static(join(__dirname, 'public')))
   }
 
   plugin.start = function startWindJSPlugin () {
@@ -188,7 +184,7 @@ function getGribData (targetMoment) {
             checkPath('grib-data', true)
 
             // pipe the file, resolve the valid time stamp
-            var file = fs.createWriteStream('grib-data/' + stamp + '.f000')
+            var file = fs.createWriteStream(`${__dirname}/grib-data/${stamp}.f000`)
             response.pipe(file)
             file.on('finish', function () {
               file.close()
@@ -211,14 +207,14 @@ function convertGribToJson (stamp, targetMoment) {
   checkPath('json-data', true)
   const exec = require('child_process').exec
 
-  exec('converter/bin/grib2json --data --output json-data/' + stamp + '.json --names --compact grib-data/' + stamp + '.f000',
+  exec(`${__dirname}/converter/bin/grib2json --data --output ${__dirname}/json-data/${stamp}.json --names --compact ${__dirname}/grib-data/${stamp}.f000`,
     { maxBuffer: 500 * 1024 },
     function (error, stdout, stderr) {
       if (error) {
         debug('exec error: ' + error)
       } else {
         // don't keep raw grib data
-        exec('rm grib-data/*')
+        exec(`rm ${__dirname}/grib-data/*`)
         // if we don't have older stamp, try and harvest one
         const prevMoment = moment(targetMoment).subtract(6, 'hours')
         const prevStamp = prevMoment.format('YYYYMMDD') + roundHours(prevMoment.hour(), 6)
@@ -257,6 +253,7 @@ function roundHours (hours, interval) {
  * @returns {boolean}
  */
 function checkPath (path, mkdir) {
+  path = join(__dirname, path)
   try {
     fs.statSync(path)
     return true
