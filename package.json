@@ -1,6 +1,6 @@
 {
-  "name": "signalk-windjs-plugin",
-  "version": "0.2.3",
+  "name": "signalk-windjs",
+  "version": "0.3.1",
   "description": "This plugin scrapes NOAA GRIB2 and makes them available in JSON format.",
   "main": "index.js",
   "keywords": [
@@ -10,7 +10,8 @@
     "grib",
     "grib2",
     "json",
-    "signalk-node-server-plugin"
+    "signalk-node-server-plugin",
+    "signalk-webapp"
   ],
   "author": "Fabian Tollenaar <fabian@decipher.industries> (https://decipher.industries)",
   "license": "ICS",
