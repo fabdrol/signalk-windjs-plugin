@@ -29,7 +29,7 @@ module.exports = function windJSPlugin (app, options) {
     name: `WindJS GRIB2 plugin, version ${pkg.version}`,
     description: 'This plugin scrapes NOAA GRIB2 and makes them available in JSON format.',
     schema: {
-      type: 'oject',
+      type: 'object',
       title: `WindJS GRIB2 plugin, version ${pkg.version}`,
       properties: {}
     }
